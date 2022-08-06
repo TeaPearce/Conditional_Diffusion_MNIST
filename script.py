@@ -1,10 +1,6 @@
 ''' 
 This script does conditional image generation on MNIST, using a diffusion model
 
-It roughly follows the classifier-free guidance approach
-In my experimentation, it seemed like variants of the method work
-e.g. both concatenation and adding embeddings seemed to work fine. 
-
 This code is modified from,
 https://github.com/cloneofsimo/minDiffusion
 
@@ -141,8 +137,8 @@ class ContextUnet(nn.Module):
         self.contextembed2 = EmbedFC(n_classes, 1*n_feat)
 
         self.up0 = nn.Sequential(
-            nn.ConvTranspose2d(6 * n_feat, 2 * n_feat, 7, 7), # when concat temb and cemb end up w 6*n_feat
-            # nn.ConvTranspose2d(2 * n_feat, 2 * n_feat, 7, 7), # otherwise just have 2*n_feat
+            # nn.ConvTranspose2d(6 * n_feat, 2 * n_feat, 7, 7), # when concat temb and cemb end up w 6*n_feat
+            nn.ConvTranspose2d(2 * n_feat, 2 * n_feat, 7, 7), # otherwise just have 2*n_feat
             nn.GroupNorm(8, 2 * n_feat),
             nn.ReLU(),
         )
@@ -181,10 +177,10 @@ class ContextUnet(nn.Module):
         temb2 = self.timeembed2(t).view(-1, self.n_feat, 1, 1)
 
         # could concatenate the context embedding here instead of adaGN
-        hiddenvec = torch.cat((hiddenvec, temb1, cemb1), 1)
+        # hiddenvec = torch.cat((hiddenvec, temb1, cemb1), 1)
 
         up1 = self.up0(hiddenvec)
-        # up2 = self.up1(up1, down2) # if concatenating
+        # up2 = self.up1(up1, down2) # if want to avoid add and multiply embeddings
         up2 = self.up1(cemb1*up1+ temb1, down2)  # add and multiply embeddings
         up3 = self.up2(cemb2*up2+ temb2, down1)
         out = self.out(torch.cat((up3, x), 1))
@@ -237,7 +233,7 @@ class DDPM(nn.Module):
 
     def forward(self, x, c):
         """
-        
+        this method is used in training, so samples t and noise randomly
         """
 
         _ts = torch.randint(1, self.n_T, (x.shape[0],)).to(self.device)  # t ~ Uniform(0, n_T)
@@ -312,16 +308,16 @@ def train_mnist():
     n_T = 400 # 500
     device = "cuda:0"
     n_classes = 10
-    n_feat = 128 # 128 ok
+    n_feat = 128 # 128 ok, 256 better (but slower)
     lrate = 1e-4
     save_model = False
-    save_dir = './data/diffusion_outputs9/'
+    save_dir = './data/diffusion_outputs10/'
     ws_test = [0.0, 0.5, 2.0] # strength of generative guidance
 
     ddpm = DDPM(nn_model=ContextUnet(in_channels=1, n_feat=n_feat, n_classes=n_classes), betas=(1e-4, 0.02), n_T=n_T, device=device, drop_prob=0.1)
     ddpm.to(device)
 
-    # optionally load model
+    # optionally load a model
     # ddpm.load_state_dict(torch.load("./data/diffusion_outputs/ddpm_unet01_mnist_9.pth"))
 
     tf = transforms.Compose([transforms.ToTensor()]) # mnist is already normalised 0 to 1
@@ -336,10 +332,6 @@ def train_mnist():
 
         # linear lrate decay
         optim.param_groups[0]['lr'] = lrate*(1-ep/n_epoch)
-
-        # if ep == int(n_epoch*0.8) or ep == int(n_epoch*0.95):
-        #     print('drop l rate')
-        #     optim.param_groups[0]['lr'] = optim.param_groups[0]['lr']/10
 
         pbar = tqdm(dataloader)
         loss_ema = None
@@ -379,9 +371,9 @@ def train_mnist():
                 save_image(grid, save_dir + f"image_ep{ep}_w{w}.png")
                 print('saved image at ' + save_dir + f"image_ep{ep}_w{w}.png")
 
-                if True:
+                if ep%5==0 or ep == int(n_epoch-1):
                     # create gif of images evolving over time, based on x_gen_store
-                    fig, axs = plt.subplots(nrows=int(n_sample/n_classes), ncols=n_classes,sharex=True,sharey=True,figsize=(16,6))
+                    fig, axs = plt.subplots(nrows=int(n_sample/n_classes), ncols=n_classes,sharex=True,sharey=True,figsize=(8,3))
                     def animate_diff(i, x_gen_store):
                         print(f'gif animating frame {i} of {x_gen_store.shape[0]}', end='\r')
                         plots = []
@@ -392,10 +384,10 @@ def train_mnist():
                                 axs[row, col].set_yticks([])
                                 # plots.append(axs[row, col].imshow(x_gen_store[i,(row*n_classes)+col,0],cmap='gray'))
                                 plots.append(axs[row, col].imshow(-x_gen_store[i,(row*n_classes)+col,0],cmap='gray',vmin=(-x_gen_store[i]).min(), vmax=(-x_gen_store[i]).max()))
-                        return plots 
+                        return plots
                     ani = FuncAnimation(fig, animate_diff, fargs=[x_gen_store],  interval=200, blit=False, repeat=True, frames=x_gen_store.shape[0])    
-                    ani.save(save_dir + f"gif_ep{ep}_w{w}.png", dpi=300, writer=PillowWriter(fps=5))
-                    print('saved image at ' + save_dir + f"gif_ep{ep}_w{w}.png")
+                    ani.save(save_dir + f"gif_ep{ep}_w{w}.gif", dpi=100, writer=PillowWriter(fps=5))
+                    print('saved image at ' + save_dir + f"gif_ep{ep}_w{w}.gif")
         # optionally save model
         if save_model and ep == int(n_epoch-1):
             torch.save(ddpm.state_dict(), save_dir + f"model_{ep}.pth")
