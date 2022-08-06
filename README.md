@@ -1,14 +1,17 @@
 # Conditional Diffusion MNIST
 
-This script is a minimalist implementation of a conditional diffusion model. It learns to generate MNIST digits, conditioned on a class label. The neural network architecture is a small U-Net. This code is modified from [this excellent repo](https://github.com/cloneofsimo/minDiffusion) which does unconditional generation. The diffusion model is a ['Denoising Diffusion Probabilistic Model (DDPM)'](https://arxiv.org/abs/2006.11239).
+This script is a minimalist implementation of a conditional diffusion model. It learns to generate MNIST digits, conditioned on a class label. The neural network architecture is a small U-Net. This code is modified from [this excellent repo](https://github.com/cloneofsimo/minDiffusion) which does unconditional generation. The diffusion model is a [Denoising Diffusion Probabilistic Model (DDPM)](https://arxiv.org/abs/2006.11239).
 
-Below are samples generated from the model.
-
-gif here.
+<p align = "center">
+<img width="400" src="gif_mnist_01.gif"/img>
+</p>
+<p align = "center">
+Samples generated from the model.
+</p>
 
 This takes around 20 minutes to train, over 15 epochs.
 
-The conditioning roughly follows the method described in ['Classifier-Free Diffusion Guidance'](https://arxiv.org/abs/2207.12598) (also used in [ImageGen 'Photorealistic Text-to-Image Diffusion Modelswith Deep Language Understanding'](https://arxiv.org/abs/2205.11487). Essential, the model infuses timestep embeddings $t_e$ and context embeddings $c_e$ with the U-Net activations at a certain layer $z_L$, via,
+The conditioning roughly follows the method described in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598) (also used in [ImageGen](https://arxiv.org/abs/2205.11487). Essential, the model infuses timestep embeddings $t_e$ and context embeddings $c_e$ with the U-Net activations at a certain layer $z_L$, via,
 
 $z_{L+1} = c_e  z_L + t_e$
 
