@@ -16,7 +16,7 @@ $a_{L+1} = c_e  a_L + t_e.$
 
 At training time, $c_e$ is randomly set to zero with probability $0.1$, so the model learns to do unconditional generation (say $\psi(z_t)$ for noise $z_t$ at timestep $t$) and also conditional generation (say $\psi(z_t, c)$ for context $c$). This is important as at generation time, we choose a weight, $w \geq 0$, to guide the model to generate examples with the following equation,
 <p align = "center">
-$\hat{\epsilon}_{t} = (1+w)\psi(z_t, c) + w \psi(z_t).$
+$\hat{\epsilon}_{t} = (1+w)\psi(z_t, c) - w \psi(z_t).$
 </p>
 
 Increasing $w$ produces images that are more typical but less diverse.
