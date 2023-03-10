@@ -236,7 +236,7 @@ class DDPM(nn.Module):
         this method is used in training, so samples t and noise randomly
         """
 
-        _ts = torch.randint(1, self.n_T, (x.shape[0],)).to(self.device)  # t ~ Uniform(0, n_T)
+        _ts = torch.randint(1, self.n_T+1, (x.shape[0],)).to(self.device)  # t ~ Uniform(0, n_T)
         noise = torch.randn_like(x)  # eps ~ N(0, 1)
 
         x_t = (
