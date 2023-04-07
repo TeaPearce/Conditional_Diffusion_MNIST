@@ -72,7 +72,7 @@ class UnetDown(nn.Module):
         process and downscale the image feature maps
         '''
         layers = [ResidualConvBlock(in_channels, out_channels), nn.MaxPool2d(2)]
-        self.model = nn.Sequential(*[ResidualConvBlock(in_channels, out_channels), nn.MaxPool2d(2)])
+        self.model = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.model(x)
