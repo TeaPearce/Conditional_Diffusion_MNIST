@@ -30,3 +30,5 @@ Samples produced with varying guidance strength, $w$.
 
 Training for above models took around 20 epochs (~20 minutes).
 
+`pretrained_model.zip` allows loading of pretrained weights.
+
